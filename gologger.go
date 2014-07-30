@@ -14,7 +14,7 @@ import (
 type logChan chan []byte
 
 var (
-    stdFlags  = lstdFlags | lshortfile
+    stdFlags  = lstdFlags | lshortfile | lmicroseconds
     loggerStd = &logger{out: os.Stderr, flag: stdFlags}
     logDir string
     recvOver  = make(chan bool)
@@ -34,12 +34,12 @@ var (
     Fatal  logType
 )
 
-const (
-    infoStr  = "[Info ]- "
-    debugStr = "[Debug]- "
-    errorStr = "[Error]- "
-    fatalStr = "[Fatal]- "
-)
+/*const (*/
+    /*infoStr  = "[Info ]- "*/
+    /*debugStr = "[Debug]- "*/
+    /*errorStr = "[Error]- "*/
+    /*fatalStr = "[Fatal]- "*/
+/*)*/
 
 const (
     nDebug = iota
@@ -144,23 +144,26 @@ func InitLogger(lvl int, dir string) {
         }()
     }
 
+    var prefix string
+    prefix = ""
+
     if lvl&_debug != 0 {
-        Debugf, Debug = makeLog(debugStr, nDebug)
+        Debugf, Debug = makeLog(prefix, nDebug)
     } else {
         Debugf, Debug = emptyLogf, emptyLog
     }
     if lvl&_info != 0 {
-        Infof, Info = makeLog(infoStr, nInfo)
+        Infof, Info = makeLog(prefix, nInfo)
     } else {
         Infof, Info = emptyLogf, emptyLog
     }
     if lvl&_error != 0 {
-        Errorf, Error = makeLog(errorStr, nError)
+        Errorf, Error = makeLog(prefix, nError)
     } else {
         Errorf, Error = emptyLogf, emptyLog
     }
     if lvl&_fatal != 0 {
-        Fatalf, Fatal = makeLog(fatalStr, nFatal)
+        Fatalf, Fatal = makeLog(prefix, nFatal)
     } else {
         Fatalf, Fatal = emptyLogf, emptyLog
     }
@@ -224,8 +227,10 @@ func (l *logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
                 *buf = append(*buf, '.')
                 itoa(buf, t.Nanosecond()/1e3, 6)
             }
-            *buf = append(*buf, ' ')
+            /**buf = append(*buf, ' ')*/
         }
+
+        *buf = append(*buf, '|')
     }
     if l.flag&(lshortfile|llongfile) != 0 {
         if l.flag&lshortfile != 0 {
@@ -241,7 +246,7 @@ func (l *logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
         *buf = append(*buf, file...)
         *buf = append(*buf, ':')
         itoa(buf, line, -1)
-        *buf = append(*buf, ": "...)
+        *buf = append(*buf, "|"...)
     }
 }
 
