@@ -1,7 +1,8 @@
 package main
 
 import (
-    "github.com/cuixin/log4g"
+    /*"github.com/cuixin/log4g"*/
+    "github.com/kevin1sMe/log4g"
     /*"os"*/
     "time"
 )
