@@ -2,17 +2,18 @@ package main
 
 import (
     "github.com/cuixin/log4g"
-    "os"
+    /*"os"*/
     "time"
 )
 
 func main() {
-    o, err := os.OpenFile("logging.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0660)
-    if err != nil {
-        print(err.Error())
-        return
-    }
-    log4g.InitLogger(log4g.LDebug, o)
+    /*o, err := os.OpenFile("logging.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0660)*/
+    /*o, err := os.OpenFile("logging.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0660)*/
+    /*if err != nil {*/
+        /*print(err.Error())*/
+        /*return*/
+    /*}*/
+    log4g.InitLogger(log4g.LDebug, ".")
     defer log4g.Close()
     logBytes := make([]byte, 26)
     for i := 0; i < 26; i++ {
@@ -21,6 +22,7 @@ func main() {
     logString := string(logBytes)
     start := time.Now()
     for i := 0; i < 250000; i++ {
+    /*for i := 0; i < 10; i++ {*/
         log4g.Debug(logString)
         log4g.Info(logString)
         log4g.Error(logString)
@@ -28,4 +30,6 @@ func main() {
     }
 
     log4g.Info(time.Since(start))
+
+    time.Sleep(time.Second * 5)
 }
