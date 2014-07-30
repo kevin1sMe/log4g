@@ -3,10 +3,15 @@ log4g
 
 Simple go logger, such as log4j, too simple to use.
 
+fork from github.com/cuixin/log4g
+
+１）根据日志等级，产生不同的日志文件夹
+２）日志文件按小时划分，方便查找
+
 installation
 ------------
 
-    go get github.com/cuixin/log4g
+    go get github.com/kevin1sMe/log4g
 
 usage
 -----
@@ -16,18 +21,16 @@ output set the nil argument, just only print to console)
 
 
 ```
-    import "github.com/cuixin/log4g"
+    import "github.com/kevin1sMe/log4g"
+    import "time"
 
     func main() {
-        o, err := os.OpenFile("logging.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0660)
-        if err != nil {
-            print(err.Error())
-            return
-        }
-        log4g.InitLogger(log4g.LDebug, o)
+        log4g.InitLogger(log4g.LDebug, ".")
         defer log4g.Close()
         // begin to output
         log4g.Info("hello world")
+
+        time.Sleep(time.Second * 1)
     }
 ```
 
