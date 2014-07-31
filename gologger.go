@@ -14,13 +14,14 @@ import (
 type logChan chan []byte
 
 var (
-    stdFlags  = lstdFlags | lshortfile | lmicroseconds
-    loggerStd = &logger{out: os.Stderr, flag: stdFlags}
-    logDir string
-    recvOver  = make(chan bool)
-    logChans = make([]logChan, nFatal + 1)
-    logWriters   = make([]*os.File, nFatal + 1)
-    subLog   = make([]string, nFatal + 1)
+    stdFlags    = lstdFlags | lshortfile | lmicroseconds
+    loggerStd   = &logger{out: os.Stderr, flag: stdFlags}
+    logDir      string
+    /*prefixStr   string*/
+    recvOver    = make(chan bool)
+    logChans    = make([]logChan, nFatal + 1)
+    logWriters  = make([]*os.File, nFatal + 1)
+    subLog      = make([]string, nFatal + 1)
 )
 
 var (
@@ -33,13 +34,6 @@ var (
     Fatalf logfType
     Fatal  logType
 )
-
-/*const (*/
-    /*infoStr  = "[Info ]- "*/
-    /*debugStr = "[Debug]- "*/
-    /*errorStr = "[Error]- "*/
-    /*fatalStr = "[Fatal]- "*/
-/*)*/
 
 const (
     nDebug = iota
@@ -84,23 +78,22 @@ func Close() {
     }
 }
 
-func InitLogger(lvl int, dir string) {
+func InitLogger(lvl int, dir string, prefix string) {
     if dir != "" {
         logDir = dir
-        //创建日志目录
+        /*prefixStr = prefix*/
+
         createLogDir(logDir)
 
-        //初始化各日志文件
         for i := nDebug ; i <= nFatal ; i++ {
             subLog[i] = ""
         }
 
-        //初始化chan
         initLogChans()
 
-        //循环读取各日志的channel 并写入到文件中
+        //read logstr from channels and write to logfile
         go func() {
-            for {
+          for {
                 select {
                     case v, ok := <-logChans[nDebug]:
                         if ok  {
@@ -121,22 +114,21 @@ func InitLogger(lvl int, dir string) {
                     case v, ok := <-logChans[nError]:
                         if ok {
                             if logWriters[nError] != nil {
-                                /*fmt.Printf("error write bytes: %s\n", string(v))*/
                                 logWriters[nError].Write(v)
                             }else {
                                 fmt.Printf("error logwriter is nil")
                             }
                         }
-                    case v, ok := <-logChans[nFatal]: 
+                    case v, ok := <-logChans[nFatal]:
                         if ok {
                             if logWriters[nFatal] != nil {
-                                /*fmt.Printf("fatal write bytes: %s\n", string(v))*/
                                 logWriters[nFatal].Write(v)
                             }else {
                                 fmt.Printf("fatal logwriter is nil")
                             }
                         }
                     case <-recvOver:
+                            //FIXME: how can I write all things before return??
                             return
 
                 }
@@ -250,7 +242,6 @@ func (l *logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
     }
 }
 
-//lvl 是日志等级。　
 func (l *logger) output(prefix string, calldepth int, lvl int, s string) error {
     now := time.Now()
     var file string
@@ -272,7 +263,7 @@ func (l *logger) output(prefix string, calldepth int, lvl int, s string) error {
 
     logfile := getLogFileName(now)
     if subLog[lvl] != logfile {
-        //创建此日志文件  
+        //create new logfile when hour changed
         o, err := os.OpenFile(getLogFullName(lvl, logfile),
                         os.O_CREATE|os.O_RDWR|os.O_APPEND, 0660)
         if err != nil {
@@ -280,7 +271,7 @@ func (l *logger) output(prefix string, calldepth int, lvl int, s string) error {
             os.Exit(-1)
         }
 
-        //更新iowriter
+        //update writer
         updateIOWriter(lvl, o)
 
         subLog[lvl] = logfile
@@ -294,11 +285,11 @@ func (l *logger) output(prefix string, calldepth int, lvl int, s string) error {
     /*_, err := l.out.Write(l.buf)*/
     newSlice := make([]byte, len(l.buf))
 
-    //获取对应日志级别的chan
+    //send logstr to channel
     recvChan := logChans[lvl]
     if recvChan != nil {
+        //FIXME: is there any way to avoid copy??
         copy(newSlice, l.buf)
-        /*fmt.Printf("send to recvChan succ: newSlice:%v \n", newSlice)*/
         recvChan <- newSlice
     }else{
         fmt.Fprintf(os.Stderr, "getRecvChan failed: lvl:%d\n", lvl)
@@ -348,8 +339,6 @@ func updateIOWriter(lvl int, o *os.File) {
     }
 }
 
-
-//初始化chan
 func initLogChans() {
     for i:=nDebug; i <= nFatal; i++ {
         logChans[i] = make(chan []byte, 128)
